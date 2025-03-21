@@ -2,5 +2,10 @@
     "workbench.startupEditor": "readme",
     "workbench.editorAssociations": {
         "*.md": "vscode.markdown.preview.editor"
-    }
+    },
+    "python.pythonPath": "c:/Users/victo/source/repos/Ajedrez/venv/Scripts/python.exe",
+    "python.envFile": "${workspaceFolder}/.env",
+    "python.analysis.extraPaths": [
+        "./src"
+    ]
 }
