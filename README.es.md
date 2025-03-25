@@ -176,7 +176,7 @@ df_con_predicciones.to_csv('partidas_con_predicciones.csv', index=False)
 ## Estructura del Proyecto
 
 ```
-chess-analysis-system/
+AJEDREZ/
 ├── evaluador.py  # Extractor de características
 ├── Ajedrez_Prediccion.py  # Predictor de resultados
 ├── requirements.txt  # Dependencias del proyecto
