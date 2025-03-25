@@ -37,7 +37,9 @@ def pgn_to_dataframe(pgn):
                 game_data["BlackElo"] = 0    
 
             try:
-                result_mapping = {'1-0': 0, '0-1': 1, '1/2-1/2': 2}
+                result_mapping = {'1-0': 0, # 0 para victoria de las blancas
+                                  '0-1': 1, # 1 para victoria de las negras
+                                  '1/2-1/2': 2} # 2 para empate
                 game_data['Result'] = result_mapping.get(game_data['Result'], -1)  # -1 para resultados desconocidos
             except KeyError:
                 game_data['Result'] = -1
@@ -76,22 +78,3 @@ def extraer_time_control(tc_str):
             return int(tc_str) if str(tc_str).isdigit() else 600
     except ValueError:
         return 600
-
-# Función para procesar los movimientos de las partidas
-def moves_to_int64(moves_list):
-    board = chess.Board()
-    encoded_moves = []
-    
-    for move in moves_list:
-        # Convertir el movimiento SAN a un objeto chess.Move
-        chess_move = board.parse_san(move)
-        
-        # Codificar el movimiento como un entero único
-        move_int = chess_move.from_square * 64 + chess_move.to_square
-        encoded_moves.append(move_int)
-        
-        # Aplicar el movimiento al tablero
-        board.push(chess_move)
-    
-    return encoded_moves
-

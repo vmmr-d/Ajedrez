@@ -1,88 +1,213 @@
-# Plantilla de Proyecto de Ciencia de Datos
+# Sistema de Análisis y Predicción de Partidas de Ajedrez
 
-Esta plantilla está diseñada para impulsar proyectos de ciencia de datos proporcionando una configuración básica para conexiones de base de datos, procesamiento de datos, y desarrollo de modelos de aprendizaje automático. Incluye una organización estructurada de carpetas para tus conjuntos de datos y un conjunto de paquetes de Python predefinidos necesarios para la mayoría de las tareas de ciencia de datos.
+Este proyecto implementa un sistema completo para analizar partidas de ajedrez, extraer características relevantes, calcular métricas de rendimiento y predecir resultados utilizando técnicas de aprendizaje automático.
 
-## Estructura
+## Contenido
 
-El proyecto está organizado de la siguiente manera:
+- [Descripción General](#descripción-general)
+- [Componentes Principales](#componentes-principales)
+- [Requisitos](#requisitos)
+- [Instalación](#instalación)
+- [Uso](#uso)
+  - [Extracción de Características](#extracción-de-características)
+  - [Entrenamiento de Modelos](#entrenamiento-de-modelos)
+  - [Predicción y Análisis](#predicción-y-análisis)
+- [Ejemplos](#ejemplos)
+- [Estructura del Proyecto](#estructura-del-proyecto)
+- [Características Extraídas](#características-extraídas)
+- [Modelos Implementados](#modelos-implementados)
 
-- `app.py` - El script principal de Python que ejecutas para tu proyecto.
-- `explore.py` - Un notebook para que puedas hacer tus exploraciones, idealmente el codigo de este notebook se migra hacia app.py para subir a produccion.
-- `utils.py` - Este archivo contiene código de utilidad para operaciones como conexiones de base de datos.
-- `requirements.txt` - Este archivo contiene la lista de paquetes de Python necesarios.
-- `models/` - Este directorio debería contener tus clases de modelos SQLAlchemy.
-- `data/` - Este directorio contiene los siguientes subdirectorios:
-  - `interim/` - Para datos intermedios que han sido transformados.
-  - `processed/` - Para los datos finales a utilizar para el modelado.
-  - `raw/` - Para datos brutos sin ningún procesamiento.
+## Descripción General
 
-## Configuración
+Este sistema permite analizar partidas de ajedrez a partir de su notación algebraica, extrayendo características relevantes como control del centro, movilidad, seguridad del rey, estructura de peones, etc. Estas características se utilizan para:
 
-**Prerrequisitos**
+1. Calcular métricas de rendimiento para ambos jugadores
+2. Entrenar modelos de aprendizaje automático para predecir resultados
+3. Generar análisis detallados de partidas
 
-Asegúrate de tener Python 3.11+ instalado en tu máquina. También necesitarás pip para instalar los paquetes de Python.
+El sistema está optimizado para manejar grandes conjuntos de datos (más de 120,000 partidas) y utiliza técnicas avanzadas de procesamiento por lotes y paralelización.
 
-**Instalación**
+## Componentes Principales
 
-Clona el repositorio del proyecto en tu máquina local.
+El proyecto consta de dos componentes principales:
 
-Navega hasta el directorio del proyecto e instala los paquetes de Python requeridos:
+1. **Evaluador**: Clase encargada de extraer características de partidas de ajedrez y calcular métricas de rendimiento.
+2. **ChessResultPredictor**: Clase que implementa modelos de aprendizaje automático para predecir resultados y rendimiento de partidas.
 
+## Requisitos
+
+- Python 3.8+
+- numpy
+- pandas
+- matplotlib
+- seaborn
+- chess
+- scikit-learn
+- xgboost
+- tensorflow
+- joblib
+- tqdm
+
+## Instalación
+
+1. Clona este repositorio:
+```bash
+git clone https://github.com/vmmr-d/Ajedrez.git
+cd chess-analysis-system
+```
+
+2. Instala las dependencias:
 ```bash
 pip install -r requirements.txt
 ```
 
-**Crear una base de datos (si es necesario)**
+## Uso
 
-Crea una nueva base de datos dentro del motor Postgres personalizando y ejecutando el siguiente comando: `$ createdb -h localhost -U <username> <db_name>`
-Conéctate al motor Postgres para usar tu base de datos, manipular tablas y datos: `$ psql -h localhost -U <username> <db_name>`
-NOTA: Recuerda revisar la información del archivo ./.env para obtener el nombre de usuario y db_name.
+### Extracción de Características
 
-¡Una vez que estés dentro de PSQL podrás crear tablas, hacer consultas, insertar, actualizar o eliminar datos y mucho más!
+Para extraer características de partidas de ajedrez y calcular métricas de rendimiento:
 
-**Variables de entorno**
+```python
+import pandas as pd
+from evaluador import Evaluador
 
-Crea un archivo .env en el directorio raíz del proyecto para almacenar tus variables de entorno, como tu cadena de conexión a la base de datos:
+# Cargar datos
+df = pd.read_csv('partidas_ajedrez.csv')
 
-```makefile
-DATABASE_URL="your_database_connection_url_here"
+# Crear instancia del evaluador
+evaluador = Evaluador()
+
+# Extraer características y calcular rendimiento
+df_con_caracteristicas = evaluador.calculate_performance_labels(
+    df=df,
+    moves_column='Moves',  # Columna que contiene los movimientos
+    n_jobs=-1,             # Usar todos los núcleos disponibles
+    batch_size=5000        # Tamaño del lote para procesamiento
+)
+
+# Guardar resultados
+df_con_caracteristicas.to_csv('partidas_con_caracteristicas.csv', index=False)
 ```
 
-## Ejecutando la Aplicación
+### Entrenamiento de Modelos
 
-Para ejecutar la aplicación, ejecuta el script app.py desde la raíz del directorio del proyecto:
+Para entrenar modelos de predicción de resultados y rendimiento:
 
-```bash
-python app.py
+```python
+from Ajedrez_Prediccion import ChessResultPredictor
+
+# Crear instancia del predictor
+predictor = ChessResultPredictor(models_dir='../models/mi_modelo_ajedrez')
+
+# Entrenar modelos
+eval_results = predictor.train_models(
+    df=df_con_caracteristicas,
+    moves_col='Moves',
+    result_col='Result',
+    batch_size=10000  # Ajustar según capacidad de memoria
+)
+
+print("Modelos entrenados y guardados en: ../models/mi_modelo_ajedrez")
 ```
 
-## Añadiendo Modelos
+### Predicción y Análisis
 
-Para añadir clases de modelos SQLAlchemy, crea nuevos archivos de script de Python dentro del directorio models/. Estas clases deben ser definidas de acuerdo a tu esquema de base de datos.
+Para analizar una partida y predecir su resultado:
 
-Definición del modelo de ejemplo (`models/example_model.py`):
+```python
+# Cargar un predictor previamente entrenado
+predictor = ChessResultPredictor(models_dir='../models/mi_modelo_ajedrez')
+predictor.load_models()
 
-```py
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import Column, Integer, String
+# Partida a analizar (notación algebraica)
+partida = 'e4 e5 Nf3 Nc6 Bb5 a6 Ba4 Nf6 O-O Be7 Re1 b5 Bb3 d6 c3 O-O'
 
-Base = declarative_base()
+# Generar informe detallado
+informe = predictor.generate_game_report(
+    moves_str=partida,
+    output_file='informe_partida.txt',
+    white_elo=1850,
+    black_elo=1750
+)
 
-class ExampleModel(Base):
-    __tablename__ = 'example_table'
-    id = Column(Integer, primary_key=True)
-    name = Column(String)
-
+print("Informe generado y guardado en: informe_partida.txt")
 ```
 
-## Trabajando con Datos
+## Ejemplos
 
-Puedes colocar tus conjuntos de datos brutos en el directorio data/raw, conjuntos de datos intermedios en data/interim, y los conjuntos de datos procesados listos para el análisis en data/processed.
+### Ejemplo 1: Extraer características de una partida individual
 
-Para procesar datos, puedes modificar el script app.py para incluir tus pasos de procesamiento de datos, utilizando pandas para la manipulación y análisis de datos.
+```python
+from evaluador import Evaluador
 
-## Contribuyentes
+evaluador = Evaluador()
+partida = 'e4 e5 Nf3 Nc6 Bb5 a6 Ba4 Nf6 O-O Be7 Re1 b5 Bb3 d6 c3 O-O'
+features, feature_names = evaluador.extract_features_from_game(partida)
 
-Esta plantilla fue construida como parte del [Data Science and Machine Learning Bootcamp](https://4geeksacademy.com/us/coding-bootcamps/datascience-machine-learning) de 4Geeks Academy por [Alejandro Sanchez](https://twitter.com/alesanchezr) y muchos otros contribuyentes. Descubre más sobre [los programas BootCamp de 4Geeks Academy](https://4geeksacademy.com/us/programs) aquí.
+# Imprimir características extraídas
+for name, value in zip(feature_names, features):
+    print(f"{name}: {value}")
+```
 
-Otras plantillas y recursos como este se pueden encontrar en la página de GitHub de la escuela.
+### Ejemplo 2: Predecir resultado para múltiples partidas
+
+```python
+import pandas as pd
+from Ajedrez_Prediccion import ChessResultPredictor
+
+# Cargar datos
+df = pd.read_csv('nuevas_partidas.csv')
+
+# Cargar predictor
+predictor = ChessResultPredictor(models_dir='../models/mi_modelo_ajedrez')
+predictor.load_models()
+
+# Predecir resultados
+df_con_predicciones = predictor.predict_dataframe(
+    df=df,
+    moves_col='Moves',
+    batch_size=1000
+)
+
+# Guardar resultados
+df_con_predicciones.to_csv('partidas_con_predicciones.csv', index=False)
+```
+
+## Estructura del Proyecto
+
+```
+chess-analysis-system/
+├── evaluador.py  # Extractor de características
+├── Ajedrez_Prediccion.py  # Predictor de resultados
+├── requirements.txt  # Dependencias del proyecto
+├── examples/  # Ejemplos de uso
+│   ├── extract_features.py
+│   ├── train_models.py
+│   └── analyze_game.py
+├── models/  # Directorio para guardar modelos entrenados
+└── data/  # Datos de ejemplo
+    └── sample_games.csv
+```
+
+## Características Extraídas
+
+El sistema extrae y calcula más de 30 características de cada partida, incluyendo:
+
+- **Material**: Cantidad promedio de piezas de cada tipo para ambos jugadores
+- **Control del centro**: Dominio de las casillas centrales
+- **Movilidad**: Cantidad de movimientos legales disponibles
+- **Seguridad del rey**: Defensas y ataques alrededor del rey
+- **Estructura de peones**: Peones doblados, aislados, etc.
+- **Desarrollo**: Tiempo de desarrollo de piezas menores
+- **Actividad**: Control del tablero y ataques a piezas
+- **Estadísticas**: Capturas, jaques, movimientos totales, etc.
+
+## Modelos Implementados
+
+El sistema implementa varios modelos de aprendizaje automático:
+
+1. **Modelo de clasificación XGBoost**: Para predecir el resultado de la partida (victoria blancas, tablas, victoria negras)
+2. **Modelos de regresión XGBoost**: Para predecir el rendimiento individual de cada jugador
+3. **Red neuronal**: Modelo de aprendizaje profundo para predecir simultáneamente el rendimiento de ambos jugadores
+
+Los modelos se entrenan con búsqueda de hiperparámetros y validación cruzada para obtener el mejor rendimiento posible.
